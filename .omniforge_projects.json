@@ -1,0 +1,47 @@
+[
+  {
+    "name": "ResendDemo",
+    "endpoints": [
+      {
+        "id": "ep_1",
+        "name": "send_email",
+        "method": "POST",
+        "path": "/emails",
+        "summary": "Send an email",
+        "description": "Send an email to recipients",
+        "authType": "bearer",
+        "parameters": [
+          {
+            "name": "to",
+            "type": "string",
+            "required": true,
+            "description": "Recipient address",
+            "location": "body"
+          },
+          {
+            "name": "subject",
+            "type": "string",
+            "required": true,
+            "description": "Subject",
+            "location": "body"
+          }
+        ],
+        "confidenceScore": 95,
+        "reasons": []
+      }
+    ],
+    "pythonCode": "from mcp.server.fastmcp import FastMCP, Context\nfrom pydantic import Field\nimport os, httpx\n\nmcp = FastMCP(\"ResendDemo\")\n\n@mcp.tool()\nasync def send_email(\n    to: str = Field(..., description=\"Recipient address\"),\n    subject: str = Field(..., description=\"Subject\")\n) -> dict:\n    \"\"\"\n    Send an email\n    \"\"\"\n    api_key = os.getenv(\"RESENDDEMO_API_KEY\")\n    if not api_key:\n        raise RuntimeError(\"RESENDDEMO_API_KEY not set\")\n    url = \"https://api.resend.com/emails\"\n    headers = {\"Authorization\": f\"Bearer {api_key}\", \"Content-Type\": \"application/json\"}\n    payload = {\"to\": to, \"subject\": subject}\n    async with httpx.AsyncClient() as client:\n        response = await client.post(url, json=payload, headers=headers)\n    response.raise_for_status()\n    return response.json()\n\nif __name__ == \"__main__\":\n    mcp.run(transport=\"stdio\")",
+    "typescriptCode": "import { McpServer } from \"@modelcontextprotocol/sdk/server/mcp.js\";\nimport { StdioServerTransport } from \"@modelcontextprotocol/sdk/server/stdio.js\";\nimport { z } from \"zod\";\n\nconst server = new McpServer({ name: \"ResendDemo\", version: \"1.0.0\" });\n\nconst sendEmailSchema = z.object({\n  to: z.string().describe(\"Recipient address\"),\n  subject: z.string().describe(\"Subject\")\n});\n\nserver.tool(\n  \"send_email\",\n  \"Send an email\",\n  sendEmailSchema,\n  async (args) => {\n    const apiKey = process.env.RESENDDEMO_API_KEY;\n    if (!apiKey) {\n      throw new Error(\"RESENDDEMO_API_KEY not set\");\n    }\n    const response = await fetch(\"https://api.resend.com/emails\", {\n      method: \"POST\",\n      headers: {\n        \"Authorization\": `Bearer ${apiKey}`,\n        \"Content-Type\": \"application/json\"\n      },\n      body: JSON.stringify({ to: args.to, subject: args.subject })\n    });\n    if (!response.ok) {\n      const errText = await response.text();\n      throw new Error(`Resend API error: ${response.status} ${errText}`);\n    }\n    const data = await response.json();\n    return { content: [{ type: \"text\", text: JSON.stringify(data) }] };\n  }\n);\n\nconst transport = new StdioServerTransport();\nawait server.connect(transport);",
+    "claudeDesktopConfig": "{\n  \"mcpServers\": {\n    \"resenddemo\": {\n      \"command\": \"python3\",\n      \"args\": [\n        \"/absolute/path/to/resenddemo_server.py\"\n      ],\n      \"env\": {\n        \"RESENDDEMO_API_KEY\": \"YOUR_API_KEY_HERE\"\n      }\n    }\n  }\n}",
+    "readme": "# ResendDemo MCP Server\n\nGenerated with **OmniForge** from live documentation.\n\n## Features\n- **Tools Generated**: 1 tools\n- **Transports**: STDIO (compatible with Claude Desktop, Cursor, and Zed)\n- **Implementations**:\n  - Python FastMCP (`server.py`)\n  - TypeScript MCP (`server.ts`)\n\n## Python Setup\n```bash\npip install \"mcp[cli]\" httpx pydantic\nexport RESENDDEMO_API_KEY=\"your_secret_key\"\npython3 server.py\n```\n\n## TypeScript Setup\n```bash\nnpm install @modelcontextprotocol/sdk zod\nexport RESENDDEMO_API_KEY=\"your_secret_key\"\nnpx tsx server.ts\n```\n\n## Claude Desktop Configuration\nAdd the configuration snippet to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\\Claude\\claude_desktop_config.json` (Windows).\n",
+    "modelUsed": "openai/gpt-oss-120b",
+    "id": "mcp_yq676qd",
+    "createdAt": "2026-10-05T09:45:54.724Z",
+    "updatedAt": "2026-10-05T09:45:54.724Z",
+    "stars": 0,
+    "tags": [
+      "mcp",
+      "omniforge"
+    ]
+  }
+]
